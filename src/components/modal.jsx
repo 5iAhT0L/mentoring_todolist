@@ -16,14 +16,19 @@ export default function EditModal({ isOpen, todo, onClose, onSave }) {
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    if (!title.trim()) {
-      alert("Judul tidak boleh kosong");
-      return;
-    }
-    const updated = { ...todo, title: title.trim(), desc: desc.trim(), status };
-    onSave(updated);
-  };
+const handleSave = () => {
+  if (!title.trim()) {
+    alert("Judul tidak boleh kosong");
+    return;
+  }
+  if (!desc.trim()) {
+    alert("Deskripsi tidak boleh kosong");
+    return;
+  }
+  const updated = { ...todo, title: title.trim(), desc: desc.trim(), status };
+  onSave(updated);
+};
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

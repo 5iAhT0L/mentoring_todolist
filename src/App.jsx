@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useState, useEffect } from "react";
 import "./App.css";
 import Closing from "./components/closing";
@@ -7,23 +8,29 @@ import Button from "./components/button";
 import Card from "./components/card";
 import EditModal from "./components/modal";
 import Footer from "./components/footer";
+import Sidebar from "./components/TodoSidebar";
 
+import { ToastProvider, useToast } from "./components/toast";
 
-function App() {
+function AppContent() {
+  const { addToast } = useToast();
+
   const [todos, setTodos] = useState(() => {
     const saved = localStorage.getItem("todos");
     return saved ? JSON.parse(saved) : [];
   });
 
   const [form, setForm] = useState({ title: "", desc: "", status: "To do" });
-  const [filter, setFilter] = useState("To do"); // desktop filter
+  const [filter, setFilter] = useState("To do");
 
-  // Mobile sidebar open state
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  // Modal
+  // modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
+
+  // mobile sidebar
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const sections = ["To do", "In Progress", "Done"];
 
   useEffect(() => {
     localStorage.setItem("todos", JSON.stringify(todos));
@@ -35,56 +42,87 @@ function App() {
   };
 
   const handleSubmit = () => {
-    if (!form.title?.trim()) return alert("Masukkan judul dulu.");
+    if (!form.title?.trim()) {
+      addToast({
+        title: "Gagal",
+        description: "Judul tidak boleh kosong",
+        type: "error",
+      });
+      return;
+    }
     const newTodo = {
       id: Date.now(),
-      title: form.title,
-      desc: form.desc,
+      title: form.title.trim(),
+      desc: form.desc.trim(),
       status: form.status || "To do",
     };
     setTodos((prev) => [newTodo, ...prev]);
     setForm({ title: "", desc: "", status: "To do" });
+    addToast({
+      title: "Tugas ditambahkan",
+      description: `${newTodo.title} → ${newTodo.status}`,
+      type: "success",
+    });
   };
 
   const handleDelete = (id) => {
     if (!confirm("Yakin mau menghapus?")) return;
+    const deleted = todos.find((t) => t.id === id);
     setTodos((prev) => prev.filter((t) => t.id !== id));
+    addToast({
+      title: "Tugas dihapus",
+      description: deleted?.title || "",
+      type: "info",
+    });
   };
 
-  // open modal with todo data
   const openEdit = (todo) => {
     setEditingTodo(todo);
     setIsModalOpen(true);
   };
 
-  // save from modal
   const handleSaveEdit = (updated) => {
     setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     setIsModalOpen(false);
     setEditingTodo(null);
+    addToast({
+      title: "Tugas diperbarui",
+      description: `${updated.title} → ${updated.status}`,
+      type: "success",
+    });
   };
 
-  // filter todos for selected section
-  const shownTodos = todos.filter((t) => t.status === filter);
+  // counts for badges
+  const counts = {
+    "To do": todos.filter((t) => t.status === "To do").length,
+    "In Progress": todos.filter((t) => t.status === "In Progress").length,
+    Done: todos.filter((t) => t.status === "Done").length,
+  };
 
-  // sections list
-  const sections = ["To do", "In Progress", "Done"];
+  const shownTodos = todos.filter((t) => t.status === filter);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white text-slate-800">
-      {/* top heading bar (for mobile, we include hamburger) */}
+      {/* top bar & closing header */}
       <div className="md:hidden bg-white/0 px-4 py-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold">To do List</h2>
-
-        {/* Hamburger */}
         <button
           aria-label="Open menu"
           onClick={() => setMobileSidebarOpen(true)}
           className="p-2 rounded-md hover:bg-slate-100 transition"
         >
-          {/* simple hamburger icon */}
-          <svg className="w-6 h-6 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          <svg
+            className="w-6 h-6 text-slate-700"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
           </svg>
         </button>
       </div>
@@ -93,31 +131,14 @@ function App() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Desktop Sidebar */}
-          <aside className="hidden md:block md:w-64 bg-white/60 rounded-xl p-4 shadow-sm sticky top-6 self-start">
-            <h4 className="font-semibold text-center text-slate-700 mb-4">Sections</h4>
-            <div className="flex flex-col gap-3">
-              {sections.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setFilter(s)}
-                  className={`py-2 rounded-md text-left px-3 transition-all duration-200 ${
-                    filter === s
-                      ? "bg-blue-600 text-white shadow-md transform scale-100"
-                      : "bg-white text-slate-700 border"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-              <button
-                onClick={() => setFilter("To do")}
-                className="mt-3 text-sm text-center text-blue-600 underline"
-              >
-                Reset to To do
-              </button>
-            </div>
-          </aside>
+          {/* Desktop Sidebar (animated indicator handled inside component) */}
+          <Sidebar
+            sections={sections}
+            filter={filter}
+            setFilter={setFilter}
+            counts={counts}
+            setMobileSidebarOpen={setMobileSidebarOpen}
+          />
 
           {/* Main */}
           <main className="flex-1">
@@ -157,7 +178,7 @@ function App() {
               </div>
             </div>
 
-            {/* Grid of todos */}
+            {/* Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {shownTodos.length === 0 ? (
                 <div className="col-span-full text-center text-slate-500">
@@ -195,21 +216,14 @@ function App() {
       />
 
       {/* Mobile Sidebar Overlay (slide in) */}
-      {/* We keep this element mounted only when open to avoid interfering with layout */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
-          {/* backdrop */}
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileSidebarOpen(false)}
             aria-hidden="true"
           />
-
-          {/* sliding panel */}
-          <aside
-            className="relative w-72 max-w-xs bg-white p-4 shadow-2xl transform transition-transform duration-300 ease-in-out translate-x-0"
-            style={{ animation: "slide-in 250ms ease-out" }}
-          >
+          <aside className="relative w-72 max-w-xs bg-white p-4 shadow-2xl transform transition-transform duration-300 ease-in-out">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-semibold text-slate-700">Sections</h4>
               <button
@@ -217,8 +231,18 @@ function App() {
                 className="p-1 rounded-md hover:bg-slate-100"
                 aria-label="Close menu"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -229,15 +253,26 @@ function App() {
                   key={s}
                   onClick={() => {
                     setFilter(s);
-                    setMobileSidebarOpen(false); // close after selecting
+                    setMobileSidebarOpen(false);
                   }}
                   className={`py-2 rounded-md text-left px-3 transition-all duration-200 ${
                     filter === s
-                      ? "bg-blue-600 text-white shadow-md transform scale-100"
+                      ? "bg-blue-600 text-white shadow-md"
                       : "bg-white text-slate-700 border"
                   }`}
                 >
-                  {s}
+                  <div className="flex items-center justify-between">
+                    <span>{s}</span>
+                    <span
+                      className={`inline-flex items-center justify-center text-xs font-medium rounded-full px-2 py-0.5 ${
+                        counts[s] > 0
+                          ? "bg-white text-blue-600"
+                          : "bg-white/70 text-slate-500"
+                      }`}
+                    >
+                      {counts[s]}
+                    </span>
+                  </div>
                 </button>
               ))}
               <button
@@ -257,4 +292,11 @@ function App() {
   );
 }
 
-export default App;
+// Wrap AppContent with ToastProvider
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  );
+}

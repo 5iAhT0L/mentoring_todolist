@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <a
-            href="https://github.com/yourusername"
+            href="https://github.com/5i_Aht0L"
             target="_blank"
             rel="noreferrer"
             aria-label="GitHub"
@@ -19,7 +19,7 @@ export default function Footer() {
           </a>
 
           <a
-            href="https://linkedin.com/in/yourusername"
+            href="https://linkedin.com/in/Athallah Andhika"
             target="_blank"
             rel="noreferrer"
             aria-label="LinkedIn"
@@ -33,7 +33,7 @@ export default function Footer() {
         </div>
 
         <div className="text-sm text-slate-600 text-center sm:text-right">
-          © {year} Your Name · <span className="hidden sm:inline">Built with React & Tailwind</span>
+          © {year} Athallah Zahwan Andhika · <span className="hidden sm:inline">Built with React & Tailwind</span>
         </div>
       </div>
     </footer>
